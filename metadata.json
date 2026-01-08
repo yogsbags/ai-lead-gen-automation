@@ -1,0 +1,8 @@
+{
+  "name": "LeadFlow AI",
+  "description": "An end-to-end Lead Generation Automation platform that uses Gemini 3 Pro and Bright Data to identify, scrape, and analyze high-value Indian prospects.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

@@ -90,7 +90,7 @@ const App: React.FC = () => {
               </p>
             </div>
           ) : (
-            <Dashboard initialLeads={leads} />
+            <Dashboard initialLeads={leads} userICP={userICP} />
           )}
         </>
       )}

@@ -1,20 +1,23 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { MOCK_LEADS } from '../constants';
-import { Lead } from '../types';
+import { Lead, ICP } from '../types';
 import LeadDrawer from './LeadDrawer';
 
 interface DashboardProps {
   initialLeads?: Lead[];
+  userICP: ICP | null;
 }
 
 type DashboardView = 'dashboard' | 'icps' | 'leads' | 'signals' | 'settings';
 
-const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [] }) => {
+const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [], userICP }) => {
   const displayLeads = initialLeads.length > 0 ? initialLeads : MOCK_LEADS;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeView, setActiveView] = useState<DashboardView>('dashboard');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const filteredLeads = displayLeads.filter(l => 
     l.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,7 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [] }) => {
         <nav className="flex-1 p-6 space-y-2">
           <SidebarItem 
             icon="fa-th-large" 
-            label="Dashboard" 
+            label="Overview" 
             active={activeView === 'dashboard'} 
             onClick={() => setActiveView('dashboard')}
           />
@@ -84,7 +87,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [] }) => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-[#fafafa]">
         {/* Header */}
-        <header className="h-24 bg-white border-b px-10 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+        <header className="h-24 bg-white border-b px-10 flex items-center justify-between sticky top-0 z-[50] shadow-sm">
           <div className="relative w-full max-w-2xl group">
             <input 
               type="text" 
@@ -95,25 +98,67 @@ const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [] }) => {
             />
             <i className="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#0070f3] transition-colors"></i>
           </div>
-          <div className="flex items-center gap-10">
-            <div className="flex items-center gap-2 px-4 py-2 bg-[#e3f9e5] rounded-full text-[10px] font-black uppercase tracking-widest text-[#1db328] border border-[#d1f2d4]">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#e3f9e5] rounded-full text-[10px] font-black uppercase tracking-widest text-[#1db328] border border-[#d1f2d4] whitespace-nowrap hidden lg:flex">
                <i className="fas fa-microscope text-[10px]"></i>
                Deep Scraper Active
             </div>
-            <div className="relative cursor-pointer group">
-              <i className="fas fa-bell text-gray-300 text-lg group-hover:text-gray-900 transition-colors"></i>
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+            
+            {/* Notifications Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => { setShowNotifications(!showNotifications); setShowProfileMenu(false); }}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${showNotifications ? 'bg-blue-50 text-[#0070f3]' : 'text-gray-300 hover:text-gray-900'}`}
+              >
+                <i className="fas fa-bell text-lg"></i>
+                <span className="absolute top-3 right-3 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-4 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                   <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-gray-900">Alerts</h4>
+                      <button className="text-[10px] font-bold text-[#0070f3]">Clear All</button>
+                   </div>
+                   <div className="space-y-4">
+                      <NotificationItem icon="fa-bolt" text="12 New leads extracted from Mumbai" time="2m ago" />
+                      <NotificationItem icon="fa-rss" text="Wealth signal hit for Chintan D." time="15m ago" />
+                      <NotificationItem icon="fa-check-circle" text="Bright Data sync completed" time="1h ago" />
+                   </div>
+                </div>
+              )}
             </div>
-            <div className="h-12 w-12 bg-gray-900 rounded-2xl flex items-center justify-center text-sm font-black text-white shadow-lg hover:scale-105 transition-all cursor-pointer">JD</div>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); }}
+                className="h-12 w-12 bg-gray-900 rounded-2xl flex items-center justify-center text-sm font-black text-white shadow-lg hover:scale-105 transition-all cursor-pointer"
+              >
+                JD
+              </button>
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                   <div className="mb-4 pb-4 border-b border-gray-50 text-left">
+                      <p className="text-sm font-black text-gray-900">John Doe</p>
+                      <p className="text-[10px] font-bold text-gray-400">john@venture.in</p>
+                   </div>
+                   <div className="space-y-2">
+                      <ProfileMenuItem icon="fa-user" label="My Account" />
+                      <ProfileMenuItem icon="fa-shield-halved" label="Security" />
+                      <ProfileMenuItem icon="fa-sign-out-alt" label="Logout" color="text-rose-500" />
+                   </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <div className="flex-1 overflow-y-auto p-10 space-y-10">
+        {/* Content View Routing */}
+        <div className="flex-1 overflow-y-auto p-10 space-y-10" onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}>
           
-          {activeView === 'dashboard' || activeView === 'leads' ? (
+          {(activeView === 'dashboard' || activeView === 'leads') && (
             <>
-              {/* Stats Section */}
+              {/* Overview Stats */}
               <div className="grid grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <StatCard label="Identified Nodes" value={displayLeads.length.toString()} trend="Live" />
                 <StatCard label="Avg Spend Capacity" value="HIGH" trend="+12% YoY" color="text-emerald-600" />
@@ -185,38 +230,63 @@ const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [] }) => {
                       })}
                     </tbody>
                   </table>
-                  {filteredLeads.length === 0 && (
-                    <div className="p-32 text-center">
-                      <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200">
-                        <i className="fas fa-search-minus text-4xl"></i>
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900">No matching nodes found</h3>
-                      <p className="text-gray-400 mt-2">Try adjusting your deep search query.</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </>
-          ) : (
-            <div className="bg-white border border-[#eeeeee] rounded-[3rem] p-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-xl shadow-gray-200/40">
-              <div className="w-24 h-24 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-8 text-primary-600">
-                <i className={`fas ${
-                  activeView === 'icps' ? 'fa-brain' : 
-                  activeView === 'signals' ? 'fa-rss' : 'fa-cog'
-                } text-4xl`}></i>
-              </div>
-              <h3 className="text-3xl font-black text-gray-900 tracking-tight capitalize">{activeView.replace('_', ' ')} View</h3>
-              <p className="text-gray-500 mt-4 text-lg font-medium max-w-md mx-auto leading-relaxed">
-                {activeView === 'icps' ? 'Your generated Market Intelligence Maps and Ideal Customer Profiles will appear here for longitudinal tracking.' :
-                 activeView === 'signals' ? 'Real-time behavioral triggers and market movement signals extracted by the scraper engine.' :
-                 'Manage your API keys, Bright Data scraping zones, and Gemini 3 Pro reasoning configurations.'}
-              </p>
-              <button 
-                onClick={() => setActiveView('dashboard')}
-                className="mt-10 px-8 py-4 bg-gray-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all"
-              >
-                Return to Dashboard
-              </button>
+          )}
+
+          {activeView === 'icps' && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <h3 className="text-2xl font-black text-gray-900 tracking-tight px-2">Generated Market Maps</h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {userICP && (
+                    <MarketMapCard 
+                      title={userICP.valueProposition.split('.')[0].slice(0, 40) + '...'} 
+                      model={userICP.businessModel} 
+                      leads={displayLeads.length.toString()} 
+                      date="Generated Just Now" 
+                      color="bg-primary-600" 
+                    />
+                  )}
+                  <MarketMapCard title="Razorpay X Enterprise" model="B2B" leads="1.1k" date="Oct 20, 2024" color="bg-indigo-600 opacity-60" />
+                  <MarketMapCard title="Indie Wealth Mgmt" model="B2C" leads="850" date="Oct 18, 2024" color="bg-emerald-600 opacity-60" />
+                  <button className="h-full min-h-[300px] border-4 border-dashed border-gray-100 rounded-[3rem] flex flex-col items-center justify-center gap-4 group hover:border-primary-200 hover:bg-primary-50/20 transition-all">
+                     <div className="w-16 h-16 bg-white shadow-lg rounded-2xl flex items-center justify-center text-primary-600 group-hover:scale-110 transition-transform">
+                        <i className="fas fa-plus text-2xl"></i>
+                     </div>
+                     <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Build New Market Map</p>
+                  </button>
+               </div>
+            </div>
+          )}
+
+          {activeView === 'signals' && (
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <h3 className="text-2xl font-black text-gray-900 tracking-tight px-2 mb-4">Real-time Triggers</h3>
+               <SignalFeedItem title="Regional Expansion" type="Growth" desc="Razorpay just opened a new office in Ahmedabad. 14 Target accounts detected." time="2m ago" />
+               <SignalFeedItem title="Funding Event" type="Venture" desc="Scrut Automation raised $10M Series A. CXOs now tagged as 'High Surplus'." time="1h ago" />
+               <SignalFeedItem title="Wealth Trigger" type="UHNW" desc="Chintan Doshi mentioned in 'Financial Times' Top 10 Investors. Priority upgraded to 95%." time="4h ago" />
+               <SignalFeedItem title="Job Movement" type="Hiring" desc="New VP Growth at Scripbox identified. Integration trigger sent to CRM." time="Yesterday" />
+            </div>
+          )}
+
+          {activeView === 'settings' && (
+            <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+               <h3 className="text-2xl font-black text-gray-900 tracking-tight px-2">System Config</h3>
+               <SettingsSection title="API Configuration">
+                  <SettingsField label="Gemini 3 Pro Key" type="password" value="••••••••••••••••" />
+                  <SettingsField label="Bright Data Zone" type="text" value="premium_social_scraper_v1" />
+               </SettingsSection>
+               <SettingsSection title="Scraper Preferences">
+                  <SettingsToggle label="Real-time Search Grounding" checked={true} />
+                  <SettingsToggle label="Deep Image Aesthetic Analysis" checked={true} />
+                  <SettingsToggle label="Wealth Surplus Logic (India)" checked={true} />
+               </SettingsSection>
+               <div className="flex justify-end pt-8">
+                  <button className="px-10 py-5 bg-[#0070f3] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-600 transition-all">
+                     Save All Config
+                  </button>
+               </div>
             </div>
           )}
         </div>
@@ -227,24 +297,90 @@ const Dashboard: React.FC<DashboardProps> = ({ initialLeads = [] }) => {
   );
 };
 
-const SidebarItem: React.FC<{ 
-  icon: string; 
-  label: string; 
-  active?: boolean; 
-  badge?: string;
-  onClick: () => void;
-}> = ({ icon, label, active, badge, onClick }) => (
-  <button 
-    onClick={(e) => {
-      e.preventDefault();
-      onClick();
-    }}
-    className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl text-sm font-bold transition-all outline-none ${
-      active 
-      ? 'bg-[#f0f7ff] text-[#0070f3] shadow-inner ring-1 ring-blue-100' 
-      : 'text-gray-500 hover:bg-[#fafafa] hover:text-gray-900'
-    }`}
-  >
+/* --- UI Helper Components --- */
+
+const MarketMapCard: React.FC<{ title: string; model: string; leads: string; date: string; color: string }> = ({ title, model, leads, date, color }) => (
+  <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group flex flex-col justify-between min-h-[300px] cursor-pointer text-left">
+    <div>
+      <div className={`w-14 h-14 ${color} rounded-2xl flex items-center justify-center text-white mb-8 shadow-xl group-hover:scale-110 transition-transform`}>
+        <i className="fas fa-brain"></i>
+      </div>
+      <h4 className="text-2xl font-black text-gray-900 tracking-tight leading-tight mb-2 line-clamp-2">{title}</h4>
+      <span className="px-2 py-1 bg-gray-50 text-gray-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-gray-100">{model} Model</span>
+    </div>
+    <div className="pt-8 border-t border-gray-50 flex items-center justify-between">
+      <div>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Nodes</p>
+        <p className="text-xl font-black text-gray-900">{leads}</p>
+      </div>
+      <p className="text-[10px] font-bold text-gray-400">{date}</p>
+    </div>
+  </div>
+);
+
+const SignalFeedItem: React.FC<{ title: string; type: string; desc: string; time: string }> = ({ title, type, desc, time }) => (
+  <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 flex items-start gap-8 group hover:shadow-xl transition-all text-left">
+    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
+      type === 'Growth' ? 'bg-emerald-50 text-emerald-600' : 
+      type === 'Venture' ? 'bg-indigo-50 text-indigo-600' :
+      type === 'UHNW' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+    }`}>
+      <i className={`fas ${
+        type === 'Growth' ? 'fa-arrow-up-right-dots' : 
+        type === 'Venture' ? 'fa-rocket' :
+        type === 'UHNW' ? 'fa-crown' : 'fa-briefcase'
+      } text-xl`}></i>
+    </div>
+    <div className="flex-1">
+      <div className="flex items-center justify-between mb-2">
+        <h5 className="text-lg font-black text-gray-900 tracking-tight">{title}</h5>
+        <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{time}</span>
+      </div>
+      <p className="text-gray-500 font-medium leading-relaxed">{desc}</p>
+      <div className="mt-4 flex gap-3">
+        <button className="text-[10px] font-black text-[#0070f3] uppercase tracking-widest hover:underline">See Deep Profile</button>
+        <span className="text-gray-200">|</span>
+        <button className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-900">Archive</button>
+      </div>
+    </div>
+  </div>
+);
+
+const SettingsSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm text-left">
+    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-gray-900 mb-10 pb-4 border-b border-gray-50">{title}</h4>
+    <div className="space-y-8">
+      {children}
+    </div>
+  </div>
+);
+
+const SettingsField: React.FC<{ label: string; type: string; value: string }> = ({ label, type, value }) => (
+  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <label className="text-sm font-bold text-gray-500">{label}</label>
+    <div className="flex-1 max-w-md relative">
+      <input 
+        type={type} 
+        value={value} 
+        readOnly
+        className="w-full px-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 text-sm font-bold text-gray-900 outline-none focus:ring-4 focus:ring-blue-50 transition-all"
+      />
+      <button className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[#0070f3] uppercase">Edit</button>
+    </div>
+  </div>
+);
+
+const SettingsToggle: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
+  <div className="flex items-center justify-between">
+    <p className="text-sm font-bold text-gray-700">{label}</p>
+    <button className={`w-14 h-8 rounded-full transition-all relative ${checked ? 'bg-[#1db328]' : 'bg-gray-200'}`}>
+      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${checked ? 'left-7' : 'left-1'}`}></div>
+    </button>
+  </div>
+);
+
+const SidebarItem: React.FC<{ icon: string; label: string; active?: boolean; badge?: string; onClick: () => void }> = ({ icon, label, active, badge, onClick }) => (
+  <button onClick={onClick} className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl text-sm font-bold transition-all outline-none ${active ? 'bg-[#f0f7ff] text-[#0070f3] shadow-inner ring-1 ring-blue-100' : 'text-gray-500 hover:bg-[#fafafa] hover:text-gray-900'}`}>
     <div className="flex items-center gap-4">
       <i className={`fas ${icon} text-xl ${active ? 'text-[#0070f3]' : 'text-gray-200'}`}></i>
       {label}
@@ -253,8 +389,27 @@ const SidebarItem: React.FC<{
   </button>
 );
 
+const NotificationItem: React.FC<{ icon: string; text: string; time: string }> = ({ icon, text, time }) => (
+  <div className="flex gap-4 group cursor-pointer text-left">
+    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 group-hover:bg-primary-50 group-hover:text-primary-600 transition-all">
+      <i className={`fas ${icon}`}></i>
+    </div>
+    <div className="flex-1">
+      <p className="text-xs font-bold text-gray-900 leading-tight mb-1">{text}</p>
+      <p className="text-[9px] font-black text-gray-300 uppercase">{time}</p>
+    </div>
+  </div>
+);
+
+const ProfileMenuItem: React.FC<{ icon: string; label: string; color?: string }> = ({ icon, label, color = 'text-gray-500' }) => (
+  <button className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-all text-left group`}>
+    <i className={`fas ${icon} text-lg ${color} opacity-40 group-hover:opacity-100 transition-all`}></i>
+    <span className={`text-xs font-bold ${color}`}>{label}</span>
+  </button>
+);
+
 const StatCard: React.FC<{ label: string; value: string; trend: string; color?: string }> = ({ label, value, trend, color }) => (
-  <div className="bg-white p-8 rounded-[2.5rem] border border-[#eeeeee] shadow-sm hover:shadow-2xl transition-all group cursor-default">
+  <div className="bg-white p-8 rounded-[2.5rem] border border-[#eeeeee] shadow-sm hover:shadow-2xl transition-all group cursor-default text-left">
     <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-4 group-hover:text-[#0070f3] transition-colors">{label}</p>
     <div className="flex items-end justify-between">
        <p className={`text-4xl font-black tracking-tight ${color || 'text-gray-900'}`}>{value}</p>

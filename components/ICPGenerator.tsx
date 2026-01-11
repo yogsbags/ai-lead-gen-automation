@@ -21,7 +21,11 @@ const ICPGenerator: React.FC<ICPGeneratorProps> = ({ onComplete }) => {
     try {
       const result = await generateICPFromUrl(url);
       setIcp(result);
-      if (result.businessModel === 'B2C') setActiveTab('B2C');
+      if (result.businessModel === 'B2C') {
+        setActiveTab('B2C');
+      } else {
+        setActiveTab('B2B');
+      }
     } catch (e) {
       setError('Failed to analyze website. Please check the URL and try again.');
     } finally {
@@ -49,7 +53,7 @@ const ICPGenerator: React.FC<ICPGeneratorProps> = ({ onComplete }) => {
             </div>
           </div>
           <div className="flex bg-gray-100 p-1 rounded-2xl">
-            {isHybrid && (
+            {(isHybrid || (icp.businessModel === 'B2B' && icp.consumerProfile) || (icp.businessModel === 'B2C' && icp.corporateProfile)) && (
               <>
                 <button 
                   onClick={() => setActiveTab('B2B')}
@@ -103,39 +107,46 @@ const ICPGenerator: React.FC<ICPGeneratorProps> = ({ onComplete }) => {
             </div>
 
             {/* Profile Content */}
-            {activeTab === 'B2B' && icp.corporateProfile ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <InsightGrid icon="fa-user-tie" title="Decision Makers" items={icp.corporateProfile.jobTitles} color="text-primary-600" />
-                <InsightGrid icon="fa-building-columns" title="Industries" items={icp.corporateProfile.industries} color="text-indigo-600" />
-                <InsightGrid icon="fa-triangle-exclamation" title="Corporate Pains" items={icp.corporateProfile.painPoints} color="text-rose-500" />
-                <InsightGrid icon="fa-meteor" title="B2B Intent Signals" items={icp.corporateProfile.buyingTriggers} color="text-amber-500" />
-                
-                <div className="md:col-span-2 grid grid-cols-3 gap-4">
-                  <StatMini label="Headcount" value={icp.corporateProfile.companySize} />
-                  <StatMini label="Target Revenue" value={icp.corporateProfile.revenueRange} />
-                  <StatMini label="Regions" value={icp.corporateProfile.geographies?.[0] || 'N/A'} />
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {activeTab === 'B2B' && icp.corporateProfile ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InsightGrid icon="fa-user-tie" title="Decision Makers" items={icp.corporateProfile.jobTitles} color="text-primary-600" />
+                  <InsightGrid icon="fa-building-columns" title="Industries" items={icp.corporateProfile.industries} color="text-indigo-600" />
+                  <InsightGrid icon="fa-triangle-exclamation" title="Corporate Pains" items={icp.corporateProfile.painPoints} color="text-rose-500" />
+                  <InsightGrid icon="fa-meteor" title="B2B Intent Signals" items={icp.corporateProfile.buyingTriggers} color="text-amber-500" />
+                  
+                  <div className="md:col-span-2 grid grid-cols-3 gap-4">
+                    <StatMini label="Headcount" value={icp.corporateProfile.companySize} />
+                    <StatMini label="Target Revenue" value={icp.corporateProfile.revenueRange} />
+                    <StatMini label="Regions" value={icp.corporateProfile.geographies?.[0] || 'N/A'} />
+                  </div>
                 </div>
-              </div>
-            ) : icp.consumerProfile ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="md:col-span-2 p-8 bg-white border border-gray-100 rounded-[2rem] shadow-sm">
-                   <div className="flex flex-col md:flex-row gap-8 justify-between">
-                      <div>
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Demographics</h4>
-                        <p className="text-xl font-black text-gray-900">{icp.consumerProfile.demographics}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Income Class</h4>
-                        <p className="text-xl font-black text-primary-600">{icp.consumerProfile.incomeBracket}</p>
-                      </div>
-                   </div>
+              ) : activeTab === 'B2C' && icp.consumerProfile ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2 p-8 bg-white border border-gray-100 rounded-[2rem] shadow-sm">
+                     <div className="flex flex-col md:flex-row gap-8 justify-between">
+                        <div>
+                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Demographics</h4>
+                          <p className="text-xl font-black text-gray-900">{icp.consumerProfile.demographics}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Income Class</h4>
+                          <p className="text-xl font-black text-primary-600">{icp.consumerProfile.incomeBracket}</p>
+                        </div>
+                     </div>
+                  </div>
+                  <InsightGrid icon="fa-heart" title="Consumer Interests" items={icp.consumerProfile.interests} color="text-pink-600" />
+                  <InsightGrid icon="fa-tags" title="Lifestyle Segments" items={icp.consumerProfile.lifestyleSegments} color="text-emerald-600" />
+                  <InsightGrid icon="fa-bolt" title="Purchase Behavior" items={[icp.consumerProfile.purchasingBehavior]} color="text-blue-600" />
+                  <InsightGrid icon="fa-users" title="Influencers" items={icp.consumerProfile.keyInfluencers} color="text-purple-600" />
                 </div>
-                <InsightGrid icon="fa-heart" title="Consumer Interests" items={icp.consumerProfile.interests} color="text-pink-600" />
-                <InsightGrid icon="fa-tags" title="Lifestyle Segments" items={icp.consumerProfile.lifestyleSegments} color="text-emerald-600" />
-                <InsightGrid icon="fa-bolt" title="Purchase Behavior" items={[icp.consumerProfile.purchasingBehavior]} color="text-blue-600" />
-                <InsightGrid icon="fa-users" title="Influencers" items={icp.consumerProfile.keyInfluencers} color="text-purple-600" />
-              </div>
-            ) : null}
+              ) : (
+                <div className="p-12 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+                  <i className="fas fa-search-nodes text-4xl text-gray-200 mb-4"></i>
+                  <p className="text-gray-400 font-bold">No detailed {activeTab} profile data found for this URL.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
